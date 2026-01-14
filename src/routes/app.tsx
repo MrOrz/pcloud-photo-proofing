@@ -46,12 +46,13 @@ function AppPage() {
 
         if (publink_code) {
           console.log("Fetching publink:", publink_code);
-          const res = await client.showpublink(publink_code, 0);
+          // showpublink is not directly on client in current SDK version
+          const res = await client.api("showpublink", { params: { code: publink_code } });
           console.log("Publink Res:", res);
           if (res && res.metadata && res.metadata.contents) {
             fileList = res.metadata.contents;
           } else {
-            throw new Error("No contents found in publink");
+            throw new Error(res.error || "No contents found in publink");
           }
         } else if (folder) {
           console.log("Fetching folder:", folder);
@@ -60,7 +61,7 @@ function AppPage() {
           if (res && res.metadata && res.metadata.contents) {
             fileList = res.metadata.contents;
           } else {
-            throw new Error("No contents found in folder");
+            throw new Error(res.error || "No contents found in folder");
           }
         }
 
@@ -72,13 +73,15 @@ function AppPage() {
           let src = "";
           try {
             if (publink_code) {
-              const linkRes = await client.getpublinkdownload(publink_code, f.fileid);
+              const linkRes = await client.api("getpublinkdownload", { params: { code: publink_code, fileid: f.fileid } });
               if (linkRes && linkRes.path && linkRes.hosts && linkRes.hosts.length > 0) {
                 src = `https://${linkRes.hosts[0]}${linkRes.path}`;
               }
             } else {
-              const linkRes = await client.getfilelink(f.fileid);
-              if (linkRes && linkRes.path && linkRes.hosts && linkRes.hosts.length > 0) {
+              const linkRes: any = await client.getfilelink(f.fileid);
+              if (typeof linkRes === 'string') {
+                src = linkRes;
+              } else if (linkRes && linkRes.path && linkRes.hosts && linkRes.hosts.length > 0) {
                 src = `https://${linkRes.hosts[0]}${linkRes.path}`;
               }
             }

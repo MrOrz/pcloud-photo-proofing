@@ -26,6 +26,7 @@ const config = defineConfig({
   ],
   define: {
     global: 'window',
+    locationid: 'undefined',
   },
 })
 
