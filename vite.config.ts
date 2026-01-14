@@ -6,6 +6,8 @@ import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
+  // Matching the base path of the GitHub Pages deployment
+  base: '/pcloud-photo-proofing/',
   plugins: [
     devtools(),
     // this is the plugin that enables path aliases
