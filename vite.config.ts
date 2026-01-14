@@ -24,6 +24,9 @@ const config = defineConfig({
     }),
     viteReact(),
   ],
+  define: {
+    global: 'window',
+  },
 })
 
 export default config
