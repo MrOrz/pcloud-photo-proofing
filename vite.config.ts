@@ -10,7 +10,11 @@ const config = defineConfig({
   // Matching the base path of the GitHub Pages deployment
   base: '/pcloud-photo-proofing/',
   plugins: [
-    nodePolyfills(),
+    nodePolyfills({
+      // Exclude 'stream' to prevent SSR build from failing with ENOENT when
+      // resolving 'node:stream/web' via stream-browserify/web.
+      exclude: ['stream'],
+    }),
     devtools(),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
@@ -19,6 +23,7 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart({
       spa: {
+        enabled: true,
         prerender: {
           outputPath: '/index.html',
         },
@@ -27,7 +32,6 @@ const config = defineConfig({
     viteReact(),
   ],
   define: {
-    global: 'window',
     locationid: 'undefined',
   },
 })
