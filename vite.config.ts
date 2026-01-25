@@ -10,6 +10,8 @@ const config = defineConfig({
   // Matching the base path of the GitHub Pages deployment
   base: '/pcloud-photo-proofing/',
   plugins: [
+    // We are using NodeJS build of pcloud JS sdk in the bundle to avoid bundling it twice.
+    // However, it requires some polyfills to run in the browser.
     nodePolyfills({
       // Exclude 'stream' to prevent SSR build from failing with ENOENT when
       // resolving 'node:stream/web' via stream-browserify/web.
