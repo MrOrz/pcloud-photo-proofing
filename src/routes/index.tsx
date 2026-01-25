@@ -13,14 +13,6 @@ function LandingPage() {
   const navigate = useNavigate();
 
   const handleGo = () => {
-    // Extract folder ID
-    // Example: https://my.pcloud.com//#/filemanager?folder=24000091184
-    const folderMatch = inputUrl.match(/folder=(\d+)/);
-    if (folderMatch) {
-      navigate({ to: "/app", search: { folder: folderMatch[1] } });
-      return;
-    }
-
     // Extract public link code
     // Example: https://u.pcloud.link/publink/show?code=kZvSyF5Zq48YtoTelemtD7vX0WhoVR6x8XqX
     const codeMatch = inputUrl.match(/code=([a-zA-Z0-9]+)/);
@@ -35,7 +27,7 @@ function LandingPage() {
       return;
     }
 
-    alert("Could not parse Valid Folder ID or Public Link Code from the URL");
+    alert("Could not parse Valid Public Link Code from the URL");
   };
 
   return (
@@ -44,7 +36,7 @@ function LandingPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center text-stone-800">pCloud Photo Proofing</CardTitle>
           <CardDescription className="text-center">
-            Enter a pCloud folder URL or Public Link to start proofing.
+            Enter a pCloud Public Link to start proofing.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -60,9 +52,8 @@ function LandingPage() {
             </Button>
           </div>
           <div className="text-xs text-stone-500 mt-4">
-            <p>Supported formats:</p>
+            <p>Supported format:</p>
             <ul className="list-disc list-inside">
-              <li>Folder Link: https://my.pcloud.com//#/filemanager?folder=12345</li>
               <li>Public Link: https://u.pcloud.link/publink/show?code=ABC...</li>
             </ul>
           </div>

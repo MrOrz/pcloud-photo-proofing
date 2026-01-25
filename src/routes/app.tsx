@@ -9,29 +9,37 @@ import * as pcloudSDK from "pcloud-sdk-js";
 const pcloud = pcloudSDK.default || pcloudSDK;
 
 type AppSearch = {
-  folder?: string;
   publink_code?: string;
 }
 
 export const Route = createFileRoute('/app')({
   validateSearch: (search: Record<string, unknown>): AppSearch => {
     return {
-      folder: (search.folder as string) || undefined,
       publink_code: (search.publink_code as string) || undefined,
     };
   },
   component: AppPage,
 });
 
+type Photo = {
+  src: string;
+  width: number;
+  height: number;
+  key?: string;
+  alt?: string;
+  [key: string]: any;
+}
+
 function AppPage() {
-  const { folder, publink_code } = Route.useSearch();
-  const [photos, setPhotos] = useState<any[]>([]);
+  const { publink_code } = Route.useSearch();
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [albumName, setAlbumName] = useState("Public Album");
 
   useEffect(() => {
     async function load() {
-      if (!folder && !publink_code) return;
+      if (!publink_code) return;
       setLoading(true);
       setError(null);
 
@@ -85,19 +93,11 @@ function AppPage() {
           console.log("Publink Res:", res);
           if (res && res.metadata && res.metadata.contents) {
             fileList = res.metadata.contents;
+            if (res.metadata.name) {
+              setAlbumName(res.metadata.name);
+            }
           } else {
             throw new Error(res.error || "No contents found in publink");
-          }
-        } else if (folder) {
-          console.log("Fetching folder:", folder);
-          // listfolder is usually fine with default client if token is set,
-          // but for consistency we use our helper.
-          const res = await pcloudApi("listfolder", { folderid: parseInt(folder) });
-          console.log("Folder Res:", res);
-          if (res && res.metadata && res.metadata.contents) {
-            fileList = res.metadata.contents;
-          } else {
-            throw new Error(res.error || "No contents found in folder");
           }
         }
 
@@ -120,11 +120,8 @@ function AppPage() {
             }
 
             // Use getpubthumbslinks for public links (no auth needed if code is present)
-            // or getthumbslinks if we were logged in (but here we focus on public link mainly)
             // The user requested getpubthumbslinks for public links.
-            const method = publink_code ? "getpubthumbslinks" : "getthumbslinks";
-
-            const linkRes = await pcloudApi(method, thumbParams);
+            const linkRes = await pcloudApi("getpubthumbslinks", thumbParams);
 
             if (linkRes && linkRes.thumbs) {
               linkRes.thumbs.forEach((t: any) => {
@@ -144,7 +141,7 @@ function AppPage() {
             src: thumbMap[f.fileid] || "", // Fallback empty if failed
             width: f.width || 800,
             height: f.height || 600,
-            key: f.fileid,
+            key: String(f.fileid),
             alt: f.name
           };
         });
@@ -161,7 +158,7 @@ function AppPage() {
       }
     }
     load();
-  }, [folder, publink_code]);
+  }, [publink_code]);
 
   if (loading) return <div className="p-10 text-center">Loading from pCloud...</div>;
   if (error) return <div className="p-10 text-center text-red-500">Error: {error}</div>;
@@ -170,7 +167,7 @@ function AppPage() {
     <div className="p-4">
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-800 to-stone-600">
-          {publink_code ? 'Public Album' : 'My Album'}
+          {albumName}
         </h1>
         <a href="/" className="text-sm text-stone-500 hover:text-stone-900 underline">Back to Home</a>
       </header>
