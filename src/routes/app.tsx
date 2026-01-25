@@ -44,8 +44,7 @@ function AppPage() {
       setError(null);
 
       try {
-        const token = import.meta.env.VITE_PCLOUD_ACCESS_TOKEN || "DUMMY_TOKEN";
-        const client = pcloud.createClient(token);
+        const client = pcloud.createClient('DUMMY_TOKEN' /* OAuth token is not required for public folders */);
 
         // Helper to call pCloud API with region fallback using the SDK
         async function pcloudApi(method: string, params: any) {
