@@ -34,6 +34,9 @@ const config = defineConfig({
     viteReact(),
   ],
   define: {
+    // pcloud-sdk-js uses this global variable to determine the location id.
+    // We are using NodeJS build of pcloud JS sdk in the bundle to avoid bundling it twice.
+    // However, it requires some polyfills to run in the browser.
     locationid: 'undefined',
   },
 })
