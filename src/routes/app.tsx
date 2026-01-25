@@ -39,14 +39,14 @@ function AppPage() {
         const token = import.meta.env.VITE_PCLOUD_ACCESS_TOKEN || "DUMMY_TOKEN";
         const client = pcloud.createClient(token);
 
-        // Helper to call pCloud API with region fallback
+        // Helper to call pCloud API with region fallback using the SDK
         async function pcloudApi(method: string, params: any) {
-          // Try US first as it's common, then fallback to EU
           const servers = ["api.pcloud.com", "eapi.pcloud.com"];
           let lastRes: any;
 
           for (const apiServer of servers) {
             try {
+              // Using SDK's client.api which handles auth and URL building
               const res = await client.api(method, { params, apiServer });
               return res;
             } catch (err: any) {
@@ -89,25 +89,32 @@ function AppPage() {
         // Filter for images
         const images = fileList.filter((f: any) => !f.isfolder && f.contenttype && f.contenttype.startsWith("image"));
 
-        // Get download links
+        // Get photo links (using thumbnails for the album)
         const photoData = await Promise.all(images.map(async (f: any) => {
           let src = "";
           try {
+            const thumbParams: any = {
+              fileid: f.fileid,
+              size: "1024x768", // Good enough for album view
+              crop: 0
+            };
+
             if (publink_code) {
-              const linkRes = await pcloudApi("getpublinkdownload", { code: publink_code, fileid: f.fileid });
-              if (linkRes && linkRes.path && linkRes.hosts && linkRes.hosts.length > 0) {
-                src = `https://${linkRes.hosts[0]}${linkRes.path}`;
-              }
-            } else {
-              const linkRes: any = await client.getfilelink(f.fileid);
-              if (typeof linkRes === 'string') {
-                src = linkRes;
-              } else if (linkRes && linkRes.path && linkRes.hosts && linkRes.hosts.length > 0) {
-                src = `https://${linkRes.hosts[0]}${linkRes.path}`;
-              }
+              thumbParams.code = publink_code;
+            }
+
+            const linkRes = await pcloudApi("getthumblink", thumbParams);
+
+            // getthumblink returns variants array
+            const variant = linkRes.variants?.[0];
+            if (variant && variant.path && variant.hosts?.length > 0) {
+              src = `https://${variant.hosts[0]}${variant.path}`;
+            } else if (linkRes.path && linkRes.hosts?.length > 0) {
+              // Fallback if it returns top-level path/hosts
+              src = `https://${linkRes.hosts[0]}${linkRes.path}`;
             }
           } catch (e) {
-            console.error("Failed to get link for", f.name, e);
+            console.error("Failed to get thumb for", f.name, e);
           }
 
           return {
