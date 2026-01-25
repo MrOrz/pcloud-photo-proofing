@@ -36,18 +36,37 @@ function AppPage() {
       setError(null);
 
       try {
-        // Attempt to create client. token is optional for publink in general API,
-        // but SDK might strictly require one in createClient.
-        // We pass a dummy or checks ENV.
         const token = import.meta.env.VITE_PCLOUD_ACCESS_TOKEN || "DUMMY_TOKEN";
         const client = pcloud.createClient(token);
+
+        // Helper to call pCloud API with region fallback
+        async function pcloudApi(method: string, params: any) {
+          // Try US first as it's common, then fallback to EU
+          const servers = ["api.pcloud.com", "eapi.pcloud.com"];
+          let lastRes: any;
+
+          for (const apiServer of servers) {
+            try {
+              const res = await client.api(method, { params, apiServer });
+              return res;
+            } catch (err: any) {
+              lastRes = err;
+              // 7001 is "Invalid link 'code'", happens if region is wrong for publinks
+              if (err.result === 7001 || err.result === 500) {
+                console.warn(`pCloud API error ${err.result} on ${apiServer}, trying next...`);
+                continue;
+              }
+              throw err;
+            }
+          }
+          throw lastRes;
+        }
 
         let fileList: any[] = [];
 
         if (publink_code) {
           console.log("Fetching publink:", publink_code);
-          // showpublink is not directly on client in current SDK version
-          const res = await client.api("showpublink", { params: { code: publink_code } });
+          const res = await pcloudApi("showpublink", { code: publink_code });
           console.log("Publink Res:", res);
           if (res && res.metadata && res.metadata.contents) {
             fileList = res.metadata.contents;
@@ -56,7 +75,9 @@ function AppPage() {
           }
         } else if (folder) {
           console.log("Fetching folder:", folder);
-          const res = await client.listfolder(parseInt(folder));
+          // listfolder is usually fine with default client if token is set,
+          // but for consistency we use our helper.
+          const res = await pcloudApi("listfolder", { folderid: parseInt(folder) });
           console.log("Folder Res:", res);
           if (res && res.metadata && res.metadata.contents) {
             fileList = res.metadata.contents;
@@ -73,7 +94,7 @@ function AppPage() {
           let src = "";
           try {
             if (publink_code) {
-              const linkRes = await client.api("getpublinkdownload", { params: { code: publink_code, fileid: f.fileid } });
+              const linkRes = await pcloudApi("getpublinkdownload", { code: publink_code, fileid: f.fileid });
               if (linkRes && linkRes.path && linkRes.hosts && linkRes.hosts.length > 0) {
                 src = `https://${linkRes.hosts[0]}${linkRes.path}`;
               }
@@ -91,7 +112,7 @@ function AppPage() {
 
           return {
             src: src,
-            width: f.width || 800, // pCloud metadata usually has width/height for images
+            width: f.width || 800,
             height: f.height || 600,
             key: f.fileid,
             alt: f.name
@@ -102,7 +123,7 @@ function AppPage() {
 
       } catch (err: any) {
         console.error(err);
-        setError(err.message || "Unknown error");
+        setError(err.error || err.message || "Unknown error");
       } finally {
         setLoading(false);
       }
