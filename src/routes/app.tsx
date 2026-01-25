@@ -2,11 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
-// @ts-ignore
-import * as pcloudSDK from "pcloud-sdk-js";
-
-// @ts-ignore
-const pcloud = pcloudSDK.default || pcloudSDK;
+import pcloud from "pcloud-sdk-js";
 
 type AppSearch = {
   publink_code?: string;
@@ -87,9 +83,7 @@ function AppPage() {
         let fileList: any[] = [];
 
         if (publink_code) {
-          console.log("Fetching publink:", publink_code);
           const res = await pcloudApi("showpublink", { code: publink_code });
-          console.log("Publink Res:", res);
           if (res && res.metadata && res.metadata.contents) {
             fileList = res.metadata.contents;
             if (res.metadata.name) {
