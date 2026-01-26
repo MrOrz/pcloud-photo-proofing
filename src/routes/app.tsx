@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { RowsPhotoAlbum } from "react-photo-album";
+import { Photo, RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
-import pcloud from "pcloud-sdk-js";
+import { pcloudApi } from '../lib/pcloud';
 
 type AppSearch = {
   publink_code?: string;
@@ -42,43 +42,6 @@ function AppPage() {
       try {
         const client = pcloud.createClient('DUMMY_TOKEN' /* OAuth token is not required for public folders */);
 
-        // Helper to call pCloud API with region fallback using the SDK
-        async function pcloudApi(method: string, params: any) {
-          const servers = ["api.pcloud.com", "eapi.pcloud.com"];
-          let lastRes: any;
-
-          for (const apiServer of servers) {
-            try {
-              if (method === "getpubthumbslinks") {
-                // pcloud-sdk-js validates method names and throws if unknown.
-                // getpubthumbslinks is not in the allowlist, so we use fetch directly.
-                const url = new URL(`https://${apiServer}/${method}`);
-                Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-
-                const response = await fetch(url.toString());
-                const data = await response.json();
-
-                if (data.result !== 0) {
-                  throw data;
-                }
-                return data;
-              } else {
-                // Using SDK's client.api which handles auth and URL building
-                const res = await client.api(method, { params, apiServer });
-                return res;
-              }
-            } catch (err: any) {
-              lastRes = err;
-              // 7001 is "Invalid link 'code'", happens if region is wrong for publinks
-              if (err.result === 7001 || err.result === 500) {
-                console.warn(`pCloud API error ${err.result} on ${apiServer}, trying next...`);
-                continue;
-              }
-              throw err;
-            }
-          }
-          throw lastRes;
-        }
 
         let fileList: any[] = [];
 
@@ -171,7 +134,22 @@ function AppPage() {
           <p className="text-xs mt-2">Make sure the folder contains images.</p>
         </div>
       ) : (
-        <RowsPhotoAlbum photos={photos} />
+        <RowsPhotoAlbum
+          photos={photos}
+          renderPhoto={({ photo, wrapperStyle, renderDefaultPhoto }) => (
+            <Link
+              to="/app/photo/$photoId"
+              params={{ photoId: photo.key! }}
+              search={{ publink_code, photos: JSON.stringify(photos) }}
+              style={{ position: 'relative', display: 'block' }}
+              data-testid={`photo-link-${photo.key}`}
+            >
+              <div style={wrapperStyle}>
+                {renderDefaultPhoto({ wrapped: true })}
+              </div>
+            </Link>
+          )}
+        />
       )}
     </div>
   );
