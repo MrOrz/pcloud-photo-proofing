@@ -28,6 +28,7 @@ type Photo = {
 function AppLayout() {
   const { publink_code } = Route.useSearch();
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [albumName, setAlbumName] = useState("Public Album");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,8 +44,11 @@ function AppLayout() {
       try {
         let fileList: any[] = [];
         const res = await pcloudApi("showpublink", { code: publink_code });
-        if (res && res.metadata && res.metadata.contents) {
-          fileList = res.metadata.contents;
+        if (res && res.metadata) {
+          fileList = res.metadata.contents || [];
+          if (res.metadata.name) {
+            setAlbumName(res.metadata.name);
+          }
         } else {
           throw new Error(res.error || "No contents found in publink");
         }
@@ -93,7 +97,7 @@ function AppLayout() {
   if (error) return <div className="p-10 text-center text-red-500">Error: {error}</div>;
 
   return (
-    <PhotoContext.Provider value={{ photos, publink_code }}>
+    <PhotoContext.Provider value={{ photos, publink_code, albumName }}>
       <Outlet />
     </PhotoContext.Provider>
   );

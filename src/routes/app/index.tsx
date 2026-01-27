@@ -9,13 +9,7 @@ export const Route = createFileRoute('/app/')({
 });
 
 function AlbumPage() {
-  const { photos, publink_code } = usePhotoContext();
-  const [albumName, setAlbumName] = useState("Public Album");
-
-  // A real implementation might fetch the album name, but for now, we'll just use the context.
-  useEffect(() => {
-    // You could fetch album-specific metadata here if needed.
-  }, [publink_code]);
+  const { photos, publink_code, albumName } = usePhotoContext();
 
   return (
     <div className="p-4">

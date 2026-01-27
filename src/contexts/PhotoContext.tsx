@@ -12,6 +12,7 @@ type Photo = {
 type PhotoContextType = {
   photos: Photo[];
   publink_code?: string;
+  albumName: string;
 };
 
 export const PhotoContext = createContext<PhotoContextType | undefined>(undefined);
