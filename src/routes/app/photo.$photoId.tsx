@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { useEffect, useState, useCallback } from 'react';
 import { useGesture } from 'react-use-gesture';
 import { pcloudApi } from '../../lib/pcloud';
+import { usePhotoContext } from '../../contexts/PhotoContext';
 
 type Photo = {
   src: string;
@@ -15,7 +16,6 @@ type Photo = {
 
 const photoSearchSchema = z.object({
   publink_code: z.string().optional(),
-  photos: z.string().optional().transform(value => value ? JSON.parse(value) as Photo[] : []),
 });
 
 export const Route = createFileRoute('/app/photo/$photoId')({
@@ -27,7 +27,8 @@ export const Route = createFileRoute('/app/photo/$photoId')({
 
 function PhotoPage() {
   const { photoId } = Route.useParams();
-  const { publink_code, photos } = Route.useSearch();
+  const { publink_code } = Route.useSearch();
+  const { photos } = usePhotoContext();
   const navigate = useNavigate();
 
   const [highResSrc, setHighResSrc] = useState<string | null>(null);
@@ -44,10 +45,10 @@ function PhotoPage() {
       navigate({
         to: '/app/photo/$photoId',
         params: { photoId: targetPhoto.key! },
-        search: { publink_code, photos: JSON.stringify(photos) },
+        search: { publink_code },
       });
     }
-  }, [navigate, publink_code, photos]);
+  }, [navigate, publink_code]);
 
   // Keyboard and Swipe Navigation
   useEffect(() => {

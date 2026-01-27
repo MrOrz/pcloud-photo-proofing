@@ -1,12 +1,11 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Photo, RowsPhotoAlbum } from "react-photo-album";
-import "react-photo-album/rows.css";
 import { pcloudApi } from '../lib/pcloud';
+import { PhotoContext } from '../contexts/PhotoContext';
 
 type AppSearch = {
   publink_code?: string;
-}
+};
 
 export const Route = createFileRoute('/app')({
   validateSearch: (search: Record<string, unknown>): AppSearch => {
@@ -14,7 +13,7 @@ export const Route = createFileRoute('/app')({
       publink_code: (search.publink_code as string) || undefined,
     };
   },
-  component: AppPage,
+  component: AppLayout,
 });
 
 type Photo = {
@@ -24,90 +23,64 @@ type Photo = {
   key?: string;
   alt?: string;
   [key: string]: any;
-}
+};
 
-function AppPage() {
+function AppLayout() {
   const { publink_code } = Route.useSearch();
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [albumName, setAlbumName] = useState("Public Album");
 
   useEffect(() => {
     async function load() {
-      if (!publink_code) return;
+      if (!publink_code) {
+        setLoading(false);
+        return;
+      };
       setLoading(true);
       setError(null);
 
       try {
-        const client = pcloud.createClient('DUMMY_TOKEN' /* OAuth token is not required for public folders */);
-
-
         let fileList: any[] = [];
-
-        if (publink_code) {
-          const res = await pcloudApi("showpublink", { code: publink_code });
-          if (res && res.metadata && res.metadata.contents) {
-            fileList = res.metadata.contents;
-            if (res.metadata.name) {
-              setAlbumName(res.metadata.name);
-            }
-          } else {
-            throw new Error(res.error || "No contents found in publink");
-          }
+        const res = await pcloudApi("showpublink", { code: publink_code });
+        if (res && res.metadata && res.metadata.contents) {
+          fileList = res.metadata.contents;
+        } else {
+          throw new Error(res.error || "No contents found in publink");
         }
 
-        // Filter for images
         const images = fileList.filter((f: any) => !f.isfolder && f.contenttype && f.contenttype.startsWith("image"));
 
-        // Batch fetch thumbnails
         let thumbMap: Record<number, string> = {};
         if (images.length > 0) {
           const fileids = images.map((f: any) => f.fileid).join(",");
-          try {
-            const thumbParams: any = {
-              fileids,
-              size: "1024x768",
-              crop: 0,
-              type: "jpg"
-            };
-            if (publink_code) {
-              thumbParams.code = publink_code;
-            }
+          const linkRes = await pcloudApi("getpubthumbslinks", {
+            code: publink_code,
+            fileids,
+            size: "1024x768",
+            crop: 0,
+            type: "jpg"
+          });
 
-            // Use getpubthumbslinks for public links (no auth needed if code is present)
-            // The user requested getpubthumbslinks for public links.
-            const linkRes = await pcloudApi("getpubthumbslinks", thumbParams);
-
-            if (linkRes && linkRes.thumbs) {
-              linkRes.thumbs.forEach((t: any) => {
-                if (t.result === 0 && t.path && t.hosts && t.hosts.length > 0) {
-                  thumbMap[t.fileid] = `https://${t.hosts[0]}${t.path}`;
-                }
-              });
-            }
-          } catch (e) {
-            console.error("Batch thumb fetch failed", e);
+          if (linkRes && linkRes.thumbs) {
+            linkRes.thumbs.forEach((t: any) => {
+              if (t.result === 0 && t.path && t.hosts && t.hosts.length > 0) {
+                thumbMap[t.fileid] = `https://${t.hosts[0]}${t.path}`;
+              }
+            });
           }
         }
 
-        // Map photos
-        const photoData = images.map((f: any) => {
-          return {
-            src: thumbMap[f.fileid] || "", // Fallback empty if failed
-            width: f.width || 800,
-            height: f.height || 600,
-            key: String(f.fileid),
-            alt: f.name
-          };
-        });
+        const photoData = images.map((f: any) => ({
+          src: thumbMap[f.fileid] || "",
+          width: f.width || 800,
+          height: f.height || 600,
+          key: String(f.fileid),
+          alt: f.name
+        }));
 
-        // If we strictly rely on batch, some might be missing if batch failed.
-        // We will filter out empty ones.
         setPhotos(photoData.filter((p: any) => p.src !== ""));
-
       } catch (err: any) {
-        console.error(err);
         setError(err.error || err.message || "Unknown error");
       } finally {
         setLoading(false);
@@ -120,37 +93,8 @@ function AppPage() {
   if (error) return <div className="p-10 text-center text-red-500">Error: {error}</div>;
 
   return (
-    <div className="p-4">
-      <header className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-stone-800 to-stone-600">
-          {albumName}
-        </h1>
-        <a href="/" className="text-sm text-stone-500 hover:text-stone-900 underline">Back to Home</a>
-      </header>
-
-      {photos.length === 0 ? (
-        <div className="text-center text-stone-500 mt-20">
-          <p>No photos found in this folder.</p>
-          <p className="text-xs mt-2">Make sure the folder contains images.</p>
-        </div>
-      ) : (
-        <RowsPhotoAlbum
-          photos={photos}
-          renderPhoto={({ photo, wrapperStyle, renderDefaultPhoto }) => (
-            <Link
-              to="/app/photo/$photoId"
-              params={{ photoId: photo.key! }}
-              search={{ publink_code, photos: JSON.stringify(photos) }}
-              style={{ position: 'relative', display: 'block' }}
-              data-testid={`photo-link-${photo.key}`}
-            >
-              <div style={wrapperStyle}>
-                {renderDefaultPhoto({ wrapped: true })}
-              </div>
-            </Link>
-          )}
-        />
-      )}
-    </div>
+    <PhotoContext.Provider value={{ photos, publink_code }}>
+      <Outlet />
+    </PhotoContext.Provider>
   );
 }

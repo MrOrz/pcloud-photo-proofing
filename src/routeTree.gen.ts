@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppPhotoPhotoIdRouteImport } from './routes/app/photo.$photoId'
 
 const AppRoute = AppRouteImport.update({
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPhotoPhotoIdRoute = AppPhotoPhotoIdRouteImport.update({
   id: '/photo/$photoId',
   path: '/photo/$photoId',
@@ -32,25 +38,27 @@ const AppPhotoPhotoIdRoute = AppPhotoPhotoIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/': typeof AppIndexRoute
   '/app/photo/$photoId': typeof AppPhotoPhotoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
+  '/app': typeof AppIndexRoute
   '/app/photo/$photoId': typeof AppPhotoPhotoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/': typeof AppIndexRoute
   '/app/photo/$photoId': typeof AppPhotoPhotoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/app/photo/$photoId'
+  fullPaths: '/' | '/app' | '/app/' | '/app/photo/$photoId'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/app' | '/app/photo/$photoId'
-  id: '__root__' | '/' | '/app' | '/app/photo/$photoId'
+  id: '__root__' | '/' | '/app' | '/app/' | '/app/photo/$photoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -74,6 +82,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/photo/$photoId': {
       id: '/app/photo/$photoId'
       path: '/photo/$photoId'
@@ -85,10 +100,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
   AppPhotoPhotoIdRoute: typeof AppPhotoPhotoIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
   AppPhotoPhotoIdRoute: AppPhotoPhotoIdRoute,
 }
 
