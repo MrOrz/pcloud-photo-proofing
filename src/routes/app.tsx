@@ -54,7 +54,7 @@ function AppLayout() {
           const linkRes = await pcloudApi("getpubthumbslinks", {
             code: publink_code,
             fileids,
-            size: "1024x768",
+            size: "512x512",
             crop: 0,
             type: "jpg"
           });
