@@ -118,7 +118,7 @@ function PhotoPage() {
       </Link>
 
       <div className="relative w-full h-full flex items-center justify-center">
-        {loading && <div className="text-white">Loading...</div>}
+        {loading && <div className="absolute text-white">Loading...</div>}
         {highResSrc && (
           <img
             src={highResSrc}
