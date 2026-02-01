@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState, useEffect } from 'react';
-import { Photo, RowsPhotoAlbum } from "react-photo-album";
+import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
 import { usePhotoContext } from '../../contexts/PhotoContext';
 
@@ -28,18 +27,20 @@ function AlbumPage() {
       ) : (
         <RowsPhotoAlbum
           photos={photos}
-          renderPhoto={({ photo, wrapperStyle, renderDefaultPhoto }) => (
-            <Link
-              to="/app/photo/$photoId"
-              params={{ photoId: photo.key! }}
-              search={{ publink_code }} // No longer passing the full photos array
-              style={{ position: 'relative', display: 'block' }}
-            >
-              <div style={wrapperStyle}>
-                {renderDefaultPhoto({ wrapped: true })}
+          render={{
+            wrapper: ({ style, ...props }, { photo }) => (
+              <div style={style} {...props}>
+                <Link
+                  to="/app/photo/$photoId"
+                  params={{ photoId: photo.key! }}
+                  search={{ publink_code }}
+                  style={{ display: "block", width: "100%", height: "100%" }}
+                >
+                  {props.children}
+                </Link>
               </div>
-            </Link>
-          )}
+            ),
+          }}
         />
       )}
     </div>
