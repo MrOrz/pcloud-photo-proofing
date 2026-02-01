@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { RowsPhotoAlbum } from "react-photo-album";
 import "react-photo-album/rows.css";
 import { usePhotoContext } from '../../contexts/PhotoContext';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/app/')({
   component: AlbumPage,
@@ -29,16 +30,15 @@ function AlbumPage() {
           photos={photos}
           render={{
             wrapper: ({ style, ...props }, { photo }) => (
-              <div style={style} {...props}>
-                <Link
-                  to="/app/photo/$photoId"
-                  params={{ photoId: photo.key! }}
-                  search={{ publink_code }}
-                  style={{ display: "block", width: "100%", height: "100%" }}
-                >
-                  {props.children}
-                </Link>
-              </div>
+              <Link
+                className={cn("block", props.className)}
+                to="/app/photo/$photoId"
+                params={{ photoId: photo.key! }}
+                search={{ publink_code }}
+                style={style}
+              >
+                {props.children}
+              </Link>
             ),
           }}
         />
