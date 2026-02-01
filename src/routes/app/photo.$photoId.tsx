@@ -1,8 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { useGesture } from 'react-use-gesture';
-import { pcloudApi } from '../../lib/pcloud';
-import { usePhotoContext, Photo } from '../../contexts/PhotoContext';
+import { usePhotoContext, useHighResPhoto, Photo } from '../../contexts/PhotoContext';
 
 
 
@@ -24,13 +23,12 @@ function PhotoPage() {
   const { photos } = usePhotoContext();
   const navigate = useNavigate();
 
-  const [highResSrc, setHighResSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
   const { currentIndex, photo } = useMemo(() => {
     const index = photos.findIndex(p => p.key === photoId);
     return { currentIndex: index, photo: photos[index] };
   }, [photos, photoId]);
+
+  const { src: highResSrc, isLoading: loading } = useHighResPhoto(photo, publink_code);
 
   const prevPhoto = currentIndex > 0 ? photos[currentIndex - 1] : null;
   const nextPhoto = currentIndex < photos.length - 1 ? photos[currentIndex + 1] : null;
@@ -63,37 +61,6 @@ function PhotoPage() {
       }
     },
   });
-
-  // Fetch high-resolution image
-  useEffect(() => {
-    let isCancelled = false;
-    async function loadHighRes() {
-      if (!photo || !publink_code) return;
-      setLoading(true);
-      setHighResSrc(photo.src); // Show thumbnail initially
-
-      try {
-        const res = await pcloudApi("getpubthumblink", {
-          code: publink_code,
-          fileid: Number(photo.key),
-          size: "2048x2048", // Using a large size as requested
-        });
-        if (!isCancelled && res.hosts && res.path) {
-          setHighResSrc(`https://${res.hosts[0]}${res.path}`);
-        }
-      } catch (err) {
-        console.error("Failed to fetch high-res image", err);
-        // Keep thumbnail src if high-res fails
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadHighRes();
-    return () => { isCancelled = true; };
-  }, [photo, publink_code]);
 
   if (!photo) {
     return (

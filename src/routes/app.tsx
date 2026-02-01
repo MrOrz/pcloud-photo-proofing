@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { pcloudApi } from '../lib/pcloud';
-import { PhotoContext, Photo } from '../contexts/PhotoContext';
+import { PhotoDataContext, PhotoCacheProvider, Photo } from '../contexts/PhotoContext';
 
 type AppSearch = {
   publink_code?: string;
@@ -90,8 +90,10 @@ function AppLayout() {
   if (error) return <div className="p-10 text-center text-red-500">Error: {error}</div>;
 
   return (
-    <PhotoContext.Provider value={{ photos, publink_code, albumName }}>
-      <Outlet />
-    </PhotoContext.Provider>
+    <PhotoDataContext.Provider value={{ photos, publink_code, albumName }}>
+      <PhotoCacheProvider>
+        <Outlet />
+      </PhotoCacheProvider>
+    </PhotoDataContext.Provider>
   );
 }
