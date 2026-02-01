@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useGesture } from 'react-use-gesture';
 import { pcloudApi } from '../../lib/pcloud';
 import { usePhotoContext, Photo } from '../../contexts/PhotoContext';
@@ -27,8 +27,10 @@ function PhotoPage() {
   const [highResSrc, setHighResSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const currentIndex = photos.findIndex(p => p.key === photoId);
-  const photo = photos[currentIndex];
+  const { currentIndex, photo } = useMemo(() => {
+    const index = photos.findIndex(p => p.key === photoId);
+    return { currentIndex: index, photo: photos[index] };
+  }, [photos, photoId]);
 
   const prevPhoto = currentIndex > 0 ? photos[currentIndex - 1] : null;
   const nextPhoto = currentIndex < photos.length - 1 ? photos[currentIndex + 1] : null;
