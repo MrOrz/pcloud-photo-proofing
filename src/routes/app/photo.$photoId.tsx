@@ -1,26 +1,19 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { z } from 'zod';
 import { useEffect, useState, useCallback } from 'react';
 import { useGesture } from 'react-use-gesture';
 import { pcloudApi } from '../../lib/pcloud';
-import { usePhotoContext } from '../../contexts/PhotoContext';
+import { usePhotoContext, Photo } from '../../contexts/PhotoContext';
 
-type Photo = {
-  src: string;
-  width: number;
-  height: number;
-  key?: string;
-  alt?: string;
-  [key: string]: any;
-}
 
-const photoSearchSchema = z.object({
-  publink_code: z.string().optional(),
-});
 
 export const Route = createFileRoute('/app/photo/$photoId')({
-  validateSearch: (search: Record<string, unknown>): z.infer<typeof photoSearchSchema> => {
-    return photoSearchSchema.parse(search);
+  validateSearch: (search: Record<string, unknown>) => {
+    if (typeof search.publink_code !== 'string') {
+      console.error('publink_code is missing in search params');
+    }
+    return {
+      publink_code: search.publink_code as string | undefined,
+    };
   },
   component: PhotoPage,
 });

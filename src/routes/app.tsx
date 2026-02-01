@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { pcloudApi } from '../lib/pcloud';
-import { PhotoContext } from '../contexts/PhotoContext';
+import { PhotoContext, Photo } from '../contexts/PhotoContext';
 
 type AppSearch = {
   publink_code?: string;
@@ -16,14 +16,7 @@ export const Route = createFileRoute('/app')({
   component: AppLayout,
 });
 
-type Photo = {
-  src: string;
-  width: number;
-  height: number;
-  key?: string;
-  alt?: string;
-  [key: string]: any;
-};
+
 
 function AppLayout() {
   const { publink_code } = Route.useSearch();

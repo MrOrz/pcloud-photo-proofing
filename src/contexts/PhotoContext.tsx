@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-type Photo = {
+export type Photo = {
   src: string;
   width: number;
   height: number;
